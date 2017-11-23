@@ -13,27 +13,10 @@ array -= [n/2, n/2]
 # Convert to distances.
 array = np.sum(array**2, axis=2)
 # Cut out a circle.
-a1 = (array < n**2 / 4).astype(np.int8)
-a2 = (array < n**2 / 8).astype(np.int8)
-
-a_sum = a1 + a2
-
-print a1
-print a2
-print a_sum
-
-def cost(a):
-	return len(a.astype(np.int8).tostring().encode("bz2"))
+array = array < n**2 / 4
 
 # Convert to array of single bytes.
-#unpacked = a2.astype(np.int8).tostring()
-
-print cost(a_sum)
-print cost(a1)
-print cost(a2)
-#print len(unpacked.encode("bz2"))
-
-exit()
+unpacked = array.astype(np.int8).tostring()
 
 # Convert as a packed array.
 packed = "".join(
