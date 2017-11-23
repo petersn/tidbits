@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Demonstration that packing bit data is often not better for compression.
+Demonstration that separating out bit planes is often not better than just letting bz2 handle the raw data.
 """
 
 import numpy as np
