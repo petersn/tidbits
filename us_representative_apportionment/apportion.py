@@ -16,7 +16,7 @@ reps = {}
 for state in populations:
 	reps[state] = 1
 
-# Step 2: Apportion the remaining 435 reps one at a time.
+# Step 2: Apportion the rest of the 435 total reps one at a time.
 for _ in xrange(435 - 50):
 	best_state, _ = max(
 		populations.iteritems(),
