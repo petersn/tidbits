@@ -23,6 +23,7 @@ for _ in xrange(435 - 50):
 		key=lambda (state, pop): pop / (reps[state] * (reps[state] + 1))**0.5,
 	)
 	reps[best_state] += 1
+	print best_state
 
 # Print the apportioned representatives per state.
 pprint.pprint(reps)
