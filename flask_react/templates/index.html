@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head lang="en">
+    <meta charset="UTF-8">
+    <title>Flask React</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Flask React</h1>
+      <br>
+      <div id="content"></div>
+    </div>
+	<script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
+	<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.0-alpha1/JSXTransformer.js"></script>
+
+    <script type="text/jsx">
+	  class Message extends React.Component {
+        render() {
+          return <h2>Test message.</h2>;
+        }
+      }
+
+      ReactDOM.render(
+        React.createElement(Message, null),
+        document.getElementById("content")
+      );
+    </script>
+  </body>
+</html>
