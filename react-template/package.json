@@ -2,7 +2,7 @@
   "name": "template",
   "version": "0.1.0",
   "scripts": {
-    "build": "npx esbuild src/App.tsx --bundle --minify --sourcemap --target=es6 --outfile=public/bundle.js",
+    "build": "npx esbuild src/App.tsx --bundle --minify --sourcemap --target=es2020 --format=esm --outfile=public/bundle.js",
     "dev": "npm run build -- --servedir=public"
   },
   "devDependencies": {
