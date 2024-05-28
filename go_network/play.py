@@ -7,7 +7,7 @@ import model
 script_dir = os.path.dirname(os.path.realpath(__file__))
 net = model.make_network()
 net.load_state_dict(torch.load(
-    os.path.join(script_dir, "models/model_1_1900.pt"),
+    os.path.join(script_dir, "models/model_5_0.pt"),
     map_location=torch.device("cpu"),
 ))
 
