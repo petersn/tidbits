@@ -7,7 +7,7 @@ import model
 script_dir = os.path.dirname(os.path.realpath(__file__))
 net = model.make_network()
 net.load_state_dict(torch.load(
-    os.path.join(script_dir, "models/model_1_1900.pt"),
+    os.path.join(script_dir, "models/model_1_600.pt"),
     map_location=torch.device("cpu"),
 ))
 
@@ -36,21 +36,24 @@ class Engine:
 
     def genmove(self, color) -> str:
         inp = torch.tensor(model.encode_board(self.board, color), dtype=torch.float32)
+        # policy = net(inp).detach().numpy()
+        # assert policy.shape == (1, 19*19)
+        # policy = policy[0]
         symmetries = []
         for i in range(8):
             symmetries.append(model.apply_symmetry_to_board(i, inp))
         symmetries = torch.stack(symmetries)
-        policy = net(symmetries).detach().numpy()
+        policy = net(symmetries).detach()
         assert policy.shape == (8, 19*19)
         policy = policy.reshape(8, 19, 19)
         # Apply inverse symmetries.
         for i in range(8):
             inverse_i = model.inverse_symmetry(i)
-            policy[i] = model.apply_symmetry_to_move(inverse_i, policy[i])
+            policy[i] = model.apply_symmetry_to_board(inverse_i, policy[i].clone())
         # Average the policy over symmetries.
         policy = policy.mean(axis=0)
         assert policy.shape == (19, 19)
-        policy = policy.flatten()
+        policy = policy.flatten().numpy()
         while True:
             # We pass if there are no legal moves.
             if policy.max() <= -1e6:

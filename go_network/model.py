@@ -10,9 +10,9 @@ BATCH_SIZE = 1024
 BLOCKS = 10
 CHANNEL_COUNT = 128
 INPUT_CHANNELS = 1 + 2 + 5
-LEARNING_RATE = 2e-3
+LEARNING_RATE = 5e-4
 WARM_UP_STEPS = 200
-LR_HALFLIFE = 10_000
+LR_HALFLIFE = 15_000
 
 class ConvBlock(torch.nn.Module):
     def __init__(self, filters, kernel_size=3):
@@ -48,6 +48,31 @@ def make_network(
         torch.nn.Flatten(),
     )
 
+neighbors = {}
+for r in range(19):
+    for c in range(19):
+        neighbors[r, c] = []
+        for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+            if 0 <= nr < 19 and 0 <= nc < 19:
+                neighbors[r, c].append((nr, nc))
+
+def find_group(board, r, c, color):
+    group = set([(r, c)])
+    liberties = set()
+    stack = [(r, c)]
+    while stack:
+        r, c = stack.pop()
+        for nr, nc in neighbors[r, c]:
+            if (nr, nc) in group:
+                continue
+            neighboring = board.get(nr, nc)
+            if neighboring is None:
+                liberties.add((nr, nc))
+            elif neighboring == color:
+                group.add((nr, nc))
+                stack.append((nr, nc))
+    return group, liberties
+
 def encode_board(board, color_to_play):
     assert color_to_play in ("b", "w")
     inp = np.zeros((INPUT_CHANNELS, 19, 19), dtype=np.int8)
@@ -59,16 +84,16 @@ def encode_board(board, color_to_play):
         which = 1 if color == color_to_play else 2
         inp[which, r, c] = 1
     # Compute liberties
+    handled = set()
     for stone, (r, c) in board.list_occupied_points():
         assert stone in ("b", "w")
-        group = board._make_group(r, c, stone)
-        liberty_count = 0
-        for r, c in group.points:
-            for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
-                if 0 <= nr < 19 and 0 <= nc < 19 and board.get(nr, nc) is None:
-                    liberty_count += 1
-        assert liberty_count >= 1
-        inp[2 + min(liberty_count, 5), r, c] = 1
+        if (r, c) in handled:
+            continue
+        group, liberties = find_group(board, r, c, stone)
+        for r, c in group:
+            assert len(liberties) >= 1
+            inp[2 + min(len(liberties), 5), r, c] = 1
+            handled.add((r, c))
     return inp
 
 def apply_symmetry_to_board(symmetry_index, inp):
