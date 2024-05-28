@@ -48,7 +48,7 @@ def make_network(
 
 def encode_board(board, color_to_play):
     assert color_to_play in ("b", "w")
-    inp = np.zeros((2, 19, 19), dtype=np.int8)
+    inp = np.zeros((INPUT_CHANNELS, 19, 19), dtype=np.int8)
     for color, (r, c) in board.list_occupied_points():
         assert color in ("b", "w")
         which = +(color == color_to_play)
@@ -66,7 +66,7 @@ def apply_symmetry_to_board(symmetry_index, inp):
         inp = torch.transpose(inp, -1, -2)
     return inp
 
-def apply_symmetry_to_move(symmetry_index, move):
+def apply_symmetry_to_move(symmetry_index, move: int) -> int:
     assert 0 <= symmetry_index < 8
     row = move // 19
     col = move % 19
