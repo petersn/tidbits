@@ -1,15 +1,17 @@
 import random
+import functools
 import numpy as np
 import torch
 from tqdm import tqdm
+import sgfmill.boards
 from torch.utils.data import DataLoader, TensorDataset
 
 BATCH_SIZE = 1024
 BLOCKS = 10
 CHANNEL_COUNT = 128
-INPUT_CHANNELS = 2
-LEARNING_RATE = 1e-3
-WARM_UP_STEPS = 500
+INPUT_CHANNELS = 1 + 2 + 5
+LEARNING_RATE = 2e-3
+WARM_UP_STEPS = 200
 LR_HALFLIFE = 10_000
 
 class ConvBlock(torch.nn.Module):
@@ -49,10 +51,24 @@ def make_network(
 def encode_board(board, color_to_play):
     assert color_to_play in ("b", "w")
     inp = np.zeros((INPUT_CHANNELS, 19, 19), dtype=np.int8)
+    # First plane is all 1s
+    inp[0] = 1
+    # Next two planes are our stones, then opponent stones
     for color, (r, c) in board.list_occupied_points():
         assert color in ("b", "w")
-        which = +(color == color_to_play)
+        which = 1 if color == color_to_play else 2
         inp[which, r, c] = 1
+    # Compute liberties
+    for stone, (r, c) in board.list_occupied_points():
+        assert stone in ("b", "w")
+        group = board._make_group(r, c, stone)
+        liberty_count = 0
+        for r, c in group.points:
+            for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+                if 0 <= nr < 19 and 0 <= nc < 19 and board.get(nr, nc) is None:
+                    liberty_count += 1
+        assert liberty_count >= 1
+        inp[2 + min(liberty_count, 5), r, c] = 1
     return inp
 
 def apply_symmetry_to_board(symmetry_index, inp):
@@ -96,7 +112,7 @@ if __name__ == "__main__":
     print(f"Loaded {len(inputs)} training pairs")
 
     net = make_network().cuda()
-    inputs = torch.tensor(inputs, dtype=torch.float32)
+    inputs = torch.tensor(inputs, dtype=torch.int8)
     targets = torch.tensor(targets, dtype=torch.int64)
     dataset = TensorDataset(inputs, targets)
     dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
@@ -115,7 +131,7 @@ if __name__ == "__main__":
                 g["lr"] = lr
             #symmetry = random.randrange(8)
             symmetry = epoch % 8
-            inp = apply_symmetry_to_board(symmetry, inp).cuda()
+            inp = apply_symmetry_to_board(symmetry, inp).cuda().float()
             target = apply_symmetry_to_move(symmetry, target).cuda()
             optimizer.zero_grad()
             output = net(inp)

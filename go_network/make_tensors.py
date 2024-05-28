@@ -1,15 +1,13 @@
 import glob
 import numpy as np
-from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 from sgfmill import sgf, sgf_moves
 import model
 
 sgf_files = glob.glob("*/*/*.sgf")
 print(f"Found {len(sgf_files)} SGF files")
 
-training_pairs = []
-game_count = 0
-for path in tqdm(sgf_files):
+def process_file(path):
     with open(path, "rb") as f:
         sgf_content = f.read()
     try:
@@ -17,14 +15,15 @@ for path in tqdm(sgf_files):
     except ValueError as e:
         msg, = e.args
         assert "bad SZ property" in msg, "Unexpected error: %s" % msg
-        continue
+        return
 
     root = sgf_game.get_root()
     board_size = root.get("SZ")
     if board_size != 19:
-        continue
+        return
 
     board, plays = sgf_moves.get_setup_and_moves(sgf_game)
+    training_pairs = []
     for color_to_play, move in plays:
         assert color_to_play in ("b", "w")
         if move is None:
@@ -35,7 +34,12 @@ for path in tqdm(sgf_files):
             board.play(move[0], move[1], color_to_play)
         except ValueError:
             raise Exception("illegal move in sgf file")
-    game_count += 1
+    return training_pairs
+
+outputs = process_map(process_file, sgf_files)
+outputs = [x for x in outputs if x is not None]
+game_count = len(outputs)
+training_pairs = [pair for pairs in outputs for pair in pairs]
 
 print(f"Processed {game_count} games, with {len(training_pairs)} training pairs")
 
