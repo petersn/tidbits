@@ -1,13 +1,15 @@
 import os
+import glob
 import sgfmill.boards
 import sgfmill.common
 import torch
 import model
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
+model_path = max(glob.glob(os.path.join(script_dir, "models/*.pt")), key=os.path.getctime)
 net = model.make_network()
 net.load_state_dict(torch.load(
-    os.path.join(script_dir, "models/model_1_600.pt"),
+    model_path,
     map_location=torch.device("cpu"),
 ))
 
@@ -36,9 +38,6 @@ class Engine:
 
     def genmove(self, color) -> str:
         inp = torch.tensor(model.encode_board(self.board, color), dtype=torch.float32)
-        # policy = net(inp).detach().numpy()
-        # assert policy.shape == (1, 19*19)
-        # policy = policy[0]
         symmetries = []
         for i in range(8):
             symmetries.append(model.apply_symmetry_to_board(i, inp))
@@ -80,7 +79,7 @@ class Engine:
         elif cmd == "name":
             return "= play.py\n"
         elif cmd == "version":
-            return "= 0.1\n"
+            return f"= {model_path.split('/')[-1]}\n"
         elif cmd == "list_commands":
             return "= protocol_version\nname\nversion\nlist_commands\nboardsize\nclear_board\nkomi\nplay\ngenmove\nquit\n"
         elif cmd == "boardsize":
