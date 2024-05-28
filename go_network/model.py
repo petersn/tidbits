@@ -82,6 +82,10 @@ def apply_symmetry_to_board(symmetry_index, inp):
         inp = torch.transpose(inp, -1, -2)
     return inp
 
+def inverse_symmetry(symmetry_index):
+    assert 0 <= symmetry_index < 8
+    return {5: 6, 6: 5}.get(symmetry_index, symmetry_index)
+
 def apply_symmetry_to_move(symmetry_index, move: int) -> int:
     assert 0 <= symmetry_index < 8
     row = move // 19
