@@ -1,11 +1,9 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom/client';
 
 function App(props: {}) {
   return <>Hello, world!</>;
 }
 
-ReactDOM.render(
-  <App />,
-  document.getElementById('root'),
-);
+const rootDiv = document.getElementById('root')!;
+ReactDOM.createRoot(rootDiv).render(<App />);
